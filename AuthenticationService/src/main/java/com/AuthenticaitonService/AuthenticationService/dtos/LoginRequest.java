@@ -1,4 +1,6 @@
 package com.AuthenticaitonService.AuthenticationService.dtos;
 
-public record LoginRequest(String userEmail, String password) {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record LoginRequest(@JsonProperty("email") String userEmail, String password) {
 }

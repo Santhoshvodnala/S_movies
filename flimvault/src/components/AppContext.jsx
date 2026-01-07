@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
 
     return {
       id: src.id ?? null,
-      userName: src.userName ?? "",
+      username: src.username ?? "",
       userEmail: src.userEmail ?? "",
       fullName: src.fullName ?? "",
       address: src.address ?? "",

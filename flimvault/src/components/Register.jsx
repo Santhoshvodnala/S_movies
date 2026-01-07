@@ -21,7 +21,7 @@ export default function RegistrationForm() {
 
   /* ---------------- FORM STATE ---------------- */
   const [formData, setFormData] = useState({
-    userName: "",
+    username: "",
     userEmail: "",
     password: "",
     fullName: "",
@@ -56,12 +56,11 @@ export default function RegistrationForm() {
     const e = {};
 
     if (!formData.fullName.trim()) e.fullName = "Full name is required";
-    if (!formData.userName.trim()) e.userName = "Username is required";
+    if (!formData.username.trim()) e.username = "Username is required";
 
     if (!formData.userEmail.trim()) e.userEmail = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.userEmail))
       e.userEmail = "Invalid email format";
-
     if (!formData.password.trim()) e.password = "Password is required";
     else if (formData.password.length < 6)
       e.password = "Password must be at least 6 characters";
@@ -84,7 +83,7 @@ export default function RegistrationForm() {
       });
 
       setStep("otp");
-      setTimer(60);
+      setTimer(30);
       alert("OTP sent to your email");
     } catch (e) {
       setErrorMsg(e.response?.data?.message || "Failed to send OTP");
@@ -143,8 +142,8 @@ export default function RegistrationForm() {
 
       // 2️⃣ Register User (MATCH UserRequest DTO EXACTLY)
       await axios.post(`${API}/register`, {
-        userName: formData.userName,
-        userEmail: formData.userEmail,
+        username: formData.username,
+        email: formData.userEmail,
         password: formData.password,
         fullName: formData.fullName,
         address: formData.address || null,
@@ -190,10 +189,10 @@ export default function RegistrationForm() {
             <Input
               icon={<User />}
               placeholder="Username"
-              name="userName"
-              value={formData.userName}
+              name="username"
+              value={formData.username}
               onChange={handleInputChange}
-              error={errors.userName}
+              error={errors.username}
             />
 
             <Input

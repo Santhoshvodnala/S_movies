@@ -41,6 +41,7 @@ public class SecurityConfig {
                                                 "/api/auth/login",
                                                 "/api/auth/register",
                                                 "/api/auth/send-otp",
+                                                "/api/auth/**",
                                                 "/api/auth/verify-otp").permitAll()
                                                 // public static resources
                                                 .requestMatchers("/public/**", "/static/**", "/favicon.ico").permitAll()

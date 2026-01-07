@@ -68,7 +68,7 @@ public class JwtService {
 
         long now = System.currentTimeMillis();
 
-        return Jwts.builder().setIssuer(issuer).setSubject(user.getUserEmail()).claim("userName", user.getUserName())
+        return Jwts.builder().setIssuer(issuer).setSubject(user.getUserEmail()).claim("userName", user.getUsername())
                 .setIssuedAt(new Date(now)).setExpiration(new Date(now + ttMillis))
                 .signWith(key, SignatureAlgorithm.HS256).compact();
 

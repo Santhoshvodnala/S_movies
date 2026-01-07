@@ -25,7 +25,7 @@ public class EmailOtp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "user_email", nullable = false)
+    @Column(nullable = false)
     private String userEmail;
 
     @Column(nullable = false)

@@ -73,7 +73,7 @@ public class UserService implements UserInterface {
             throw new UserAlreadyExistsException("user already exists with this email");
         }
         User user = new User();
-        user.setUserName(userRequest.userName());
+        user.setUsername(userRequest.username());
         user.setUserEmail(userRequest.userEmail());
         user.setPassword(passwordEncoder.encode(userRequest.password()));
         user.setCountryCode(userRequest.countryCode());
@@ -82,7 +82,7 @@ public class UserService implements UserInterface {
 
         userRepository.save(user);
 
-        return new UserResposne(user.getUserName(), user.getUserEmail(), user.getUserID(),
+        return new UserResposne(user.getUsername(), user.getUserEmail(), user.getUserID(),
                 user.getCountryCode(),
                 user.getAddress(), user.getPhone());
     }
