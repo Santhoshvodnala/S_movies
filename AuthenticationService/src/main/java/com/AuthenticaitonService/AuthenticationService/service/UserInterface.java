@@ -15,4 +15,6 @@ public interface UserInterface {
 
     TokenResponse loginUser(LoginRequest loginRequest) throws InavlidCredentials;
 
+    UserResposne fetchUser(String userEmail);
+
 }

@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
 
@@ -29,56 +29,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        log.debug("[JwtFilter] Authorization header: {}", authHeader);
 
-        if (!StringUtils.hasText(authHeader) || !authHeader.isEmpty()) {
+        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7).trim();
+        String token = authHeader.substring(7);
 
-        if (!StringUtils.hasText(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        Optional<io.jsonwebtoken.Jws<io.jsonwebtoken.Claims>> parsed = jwtService.tryParseWithLogging(token);
+        Optional<Jws<Claims>> parsed = jwtService.tryParseWithLogging(token);
         if (parsed.isEmpty()) {
-            log.warn("[JwtFilter] token parse failed — skipping authentication");
             filterChain.doFilter(request, response);
             return;
         }
 
-        Claims claims = parsed.get().getBody();
-        String email = claims.getSubject();
-        // String role = claims.get("userName", String.class);
-
+        String email = parsed.get().getBody().getSubject();
         if (!StringUtils.hasText(email)) {
-            log.warn("[JwtFilter] token has no subject/email");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // List<SimpleGrantedAuthority> authorities = (role != null && !role.isBlank())
-        // ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
-        // : List.of();
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                email,
+                null,
+                List.of() // ✅ NO ROLES
+        );
 
-        // UsernamePasswordAuthenticationToken auth = new
-        // UsernamePasswordAuthenticationToken(email, null, authorities);
-
-        // attach claims as details if needed later
-        // auth.setDetails(claims);
-
-        // SecurityContextHolder.getContext().setAuthentication(auth);
-        // log.debug("[JwtFilter] Authentication set for principal: {}", email);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("JWT authenticated user: {}", email);
 
         filterChain.doFilter(request, response);
-
     }
-
 }

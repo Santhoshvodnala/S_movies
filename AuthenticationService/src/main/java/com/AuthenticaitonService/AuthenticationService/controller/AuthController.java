@@ -3,16 +3,22 @@ package com.AuthenticaitonService.AuthenticationService.controller;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.AuthenticaitonService.AuthenticationService.dtos.LoginRequest;
 import com.AuthenticaitonService.AuthenticationService.dtos.TokenResponse;
 import com.AuthenticaitonService.AuthenticationService.dtos.UserRequest;
+import com.AuthenticaitonService.AuthenticationService.dtos.UserResposne;
 import com.AuthenticaitonService.AuthenticationService.exception.InavlidCredentials;
 import com.AuthenticaitonService.AuthenticationService.service.OtpService;
 import com.AuthenticaitonService.AuthenticationService.service.UserService;
@@ -82,7 +88,28 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest)
             throws InavlidCredentials {
+
+        System.out.println("user : " + loginRequest.userEmail());
         return ResponseEntity.ok(userService.loginUser(loginRequest));
+
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> fetchUser(Authentication authentication,
+            @RequestHeader(name = "Authorization", required = false) String authHeader) {
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String userEmail = (String) authentication.getPrincipal();
+
+            return ResponseEntity.ok(userService.fetchUser(userEmail));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("Message", "Server Error"));
+        }
 
     }
 

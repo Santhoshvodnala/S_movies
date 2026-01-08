@@ -5,7 +5,7 @@ import { loginUser } from "../api/auth";
 import { useAuth } from "./AppContext";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [password, setPwd] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [err, setErr] = useState("");
@@ -14,18 +14,20 @@ const Login = () => {
   const navigate = useNavigate();
   const auth = useAuth();
 
+  console.log(auth);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
 
-    if (!email || !password) {
+    if (!userEmail || !password) {
       setErr("Please enter both email and password");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await loginUser({ email, password });
+      const res = await loginUser({ userEmail, password });
 
       const token = res?.accessToken || res?.token || res?.data?.accessToken;
 
@@ -52,8 +54,8 @@ const Login = () => {
           <input
             type="email"
             placeholder="Username / Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={userEmail}
+            onChange={(e) => setUserEmail(e.target.value)}
             className="w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 

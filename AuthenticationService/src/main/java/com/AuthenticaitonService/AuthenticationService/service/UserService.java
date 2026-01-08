@@ -111,4 +111,14 @@ public class UserService implements UserInterface {
         return new TokenResponse(token);
     }
 
+    @Override
+    public UserResposne fetchUser(String userEmail) {
+        return Optional.ofNullable(userRepository.findByUserEmail(userEmail))
+                .map(u -> new UserResposne(u.getUsername(), u.getUserEmail(), u.getUserID(),
+                        u.getCountryCode(),
+                        u.getAddress(), u.getPhone()))
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+    }
+
 }

@@ -23,9 +23,6 @@ API.interceptors.response.use(
       localStorage.removeItem("token");
       console.warn("Unauthorized — token removed");
     }
-    if (error.response?.status === 403) {
-      console.warn("Forbidden — insufficient role");
-    }
     return Promise.reject(error);
   }
 );

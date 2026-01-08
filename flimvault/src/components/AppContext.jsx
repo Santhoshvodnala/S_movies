@@ -27,7 +27,6 @@ export function AuthProvider({ children }) {
       address: src.address ?? "",
       countryCode: src.countryCode ?? "",
       phone: src.phone ?? "",
-      role: src.role ?? "",
       token: localStorage.getItem("token"),
     };
   };
