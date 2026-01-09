@@ -7,6 +7,8 @@ import { Route, Routes } from "react-router-dom";
 import Banner from "./components/Banner";
 import Register from "./components/Register";
 import SearchResults from "./components/Search";
+import Profile from "./components/Profile";
+import Toast from "./components/Toast";
 
 function App() {
   const [watchlist, setWatchlist] = useState([]);
@@ -76,6 +78,10 @@ function App() {
             />
           }
         />
+
+        <Route path="/profile" element={<Profile />} />
+
+        <Route path="/toast" element={<Toast />} />
       </Routes>
     </div>
   );

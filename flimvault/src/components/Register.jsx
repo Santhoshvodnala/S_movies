@@ -1,3 +1,4 @@
+// components/RegistrationForm.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -8,18 +9,26 @@ import {
   Globe,
   Check,
   AlertCircle,
+  MapPin,
+  ArrowLeft,
+  Send,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import Toast from "./Toast";
 
 const API = "http://localhost:8086/api/auth";
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState("register"); // register | otp
+  const [step, setStep] = useState("register");
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
-  /* ---------------- FORM STATE ---------------- */
   const [formData, setFormData] = useState({
     username: "",
     userEmail: "",
@@ -35,7 +44,10 @@ export default function RegistrationForm() {
   const [timer, setTimer] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
 
-  /* ---------------- OTP TIMER ---------------- */
+  const showToast = (message, type) => {
+    setToast({ message, type });
+  };
+
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => setTimer((t) => t - 1), 1000);
@@ -43,7 +55,6 @@ export default function RegistrationForm() {
     }
   }, [timer]);
 
-  /* ---------------- INPUT HANDLER ---------------- */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
@@ -51,96 +62,86 @@ export default function RegistrationForm() {
     setErrorMsg("");
   };
 
-  /* ---------------- FORM VALIDATION ---------------- */
   const validateForm = () => {
     const e = {};
-
     if (!formData.fullName.trim()) e.fullName = "Full name is required";
     if (!formData.username.trim()) e.username = "Username is required";
-
     if (!formData.userEmail.trim()) e.userEmail = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.userEmail))
       e.userEmail = "Invalid email format";
     if (!formData.password.trim()) e.password = "Password is required";
     else if (formData.password.length < 6)
       e.password = "Password must be at least 6 characters";
-
     if (!formData.phone.trim()) e.phone = "Phone number is required";
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  /* ---------------- SEND OTP ---------------- */
   const sendOtp = async () => {
     if (!validateForm()) return;
 
     try {
       setLoading(true);
-
-      await axios.post(`${API}/send-otp`, {
-        email: formData.userEmail, // OTP API expects email
-      });
-
+      await axios.post(`${API}/send-otp`, { email: formData.userEmail });
       setStep("otp");
-      setTimer(30);
-      alert("OTP sent to your email");
+      setTimer(60);
+      showToast(`OTP sent to ${formData.userEmail}`, "info");
     } catch (e) {
-      setErrorMsg(e.response?.data?.message || "Failed to send OTP");
+      const msg = e.response?.data?.message || "Failed to send OTP";
+      setErrorMsg(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------------- RESEND OTP ---------------- */
   const resendOtp = async () => {
     try {
       setLoading(true);
-
-      await axios.post(`${API}/send-otp`, {
-        email: formData.userEmail,
-      });
-
+      await axios.post(`${API}/send-otp`, { email: formData.userEmail });
       setTimer(60);
       setOtp(["", "", "", "", "", ""]);
-      alert("OTP resent");
+      showToast("OTP resent successfully!", "info");
     } catch (e) {
-      setErrorMsg(e.response?.data?.message || "Failed to resend OTP");
+      const msg = e.response?.data?.message || "Failed to resend OTP";
+      setErrorMsg(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------------- OTP INPUT ---------------- */
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
-
     const copy = [...otp];
     copy[index] = value.slice(-1);
     setOtp(copy);
-
     if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
-  /* ---------------- VERIFY OTP + REGISTER ---------------- */
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
   const verifyOtp = async () => {
     if (otp.join("").length !== 6) {
       setErrorMsg("Please enter a valid 6-digit OTP");
+      showToast("Please enter a valid 6-digit OTP", "warning");
       return;
     }
 
     try {
       setLoading(true);
 
-      // 1️⃣ Verify OTP
       await axios.post(`${API}/verify-otp`, {
         email: formData.userEmail,
         otp: otp.join(""),
       });
 
-      // 2️⃣ Register User (MATCH UserRequest DTO EXACTLY)
       await axios.post(`${API}/register`, {
         username: formData.username,
         email: formData.userEmail,
@@ -151,34 +152,56 @@ export default function RegistrationForm() {
         phone: formData.phone,
       });
 
-      alert("Registration successful!");
-      navigate("/login");
+      showToast("Registration successful! Redirecting to login...", "success");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (e) {
-      setErrorMsg(e.response?.data?.message || "OTP verification failed");
+      const msg = e.response?.data?.message || "Verification failed";
+      setErrorMsg(msg);
+      showToast(msg, "error");
       setOtp(["", "", "", "", "", ""]);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------------- UI ---------------- */
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-[420px]">
-        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
-          {step === "register" ? "Create Account" : "Verify OTP"}
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <div className="bg-slate-800/50 backdrop-blur-sm shadow-2xl rounded-2xl p-8 w-full max-w-[460px] border border-slate-700/50">
+        {/* Header */}
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+            {step === "register" ? (
+              <User className="text-slate-900" size={28} />
+            ) : (
+              <Mail className="text-slate-900" size={28} />
+            )}
+          </div>
+        </div>
+
+        <h2 className="text-3xl font-bold text-center mb-2 text-white">
+          {step === "register" ? "Create Account" : "Verify Email"}
         </h2>
 
-        <p className="text-sm text-center text-gray-500 mb-6">
+        <p className="text-sm text-center text-slate-400 mb-6">
           {step === "register"
-            ? "Create your account to continue"
-            : "Enter the 6-digit OTP sent to your email"}
+            ? "Join us and start your journey"
+            : `Enter the 6-digit code sent to ${formData.userEmail}`}
         </p>
 
         {step === "register" ? (
           <div className="space-y-4">
-            <Input
-              icon={<User />}
+            {/* Full Name */}
+            <InputField
+              icon={<User size={18} />}
               placeholder="Full Name"
               name="fullName"
               value={formData.fullName}
@@ -186,8 +209,9 @@ export default function RegistrationForm() {
               error={errors.fullName}
             />
 
-            <Input
-              icon={<User />}
+            {/* Username */}
+            <InputField
+              icon={<User size={18} />}
               placeholder="Username"
               name="username"
               value={formData.username}
@@ -195,51 +219,80 @@ export default function RegistrationForm() {
               error={errors.username}
             />
 
-            <Input
-              icon={<Mail />}
-              placeholder="Email"
+            {/* Email */}
+            <InputField
+              icon={<Mail size={18} />}
+              type="email"
+              placeholder="Email address"
               name="userEmail"
               value={formData.userEmail}
               onChange={handleInputChange}
               error={errors.userEmail}
             />
 
-            <Input
-              icon={<Lock />}
-              type="password"
-              placeholder="Password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              error={errors.password}
-            />
+            <div>
+              <div className="relative">
+                {/* Lock Icon */}
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Lock size={18} />
+                </span>
+
+                {/* Input */}
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password (min 6 characters)"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full pl-12 pr-12 py-3 bg-slate-700/50 border rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 transition-all duration-300 ${
+                    errors.password
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-slate-600 focus:border-zh-amber-400"
+                  }`}
+                />
+
+                {/* Eye Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              {errors.password && (
+                <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1 ml-1">
+                  <AlertCircle size={12} /> {errors.password}
+                </p>
+              )}
+            </div>
 
             {/* Country Code + Phone */}
-            <div className="flex gap-2">
-              <div className="w-1/3">
+            <div className="flex gap-3">
+              <div className="w-28">
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-400">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                     <Globe size={18} />
                   </span>
                   <select
                     name="countryCode"
                     value={formData.countryCode}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg
-                               focus:ring-2 focus:ring-blue-400 bg-white"
+                    className="w-full pl-10 pr-2 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all duration-300 appearance-none cursor-pointer"
                   >
-                    <option value="+91">+91</option>
-                    <option value="+1">+1</option>
-                    <option value="+44">+44</option>
-                    <option value="+61">+61</option>
-                    <option value="+971">+971</option>
+                    <option value="+91">🇮🇳 +91</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+61">🇦🇺 +61</option>
+                    <option value="+971">🇦🇪 +971</option>
                   </select>
                 </div>
               </div>
 
               <div className="flex-1">
-                <Input
-                  icon={<Phone />}
+                <InputField
+                  icon={<Phone size={18} />}
                   placeholder="Phone number"
                   name="phone"
                   value={formData.phone}
@@ -249,106 +302,173 @@ export default function RegistrationForm() {
               </div>
             </div>
 
-            <textarea
-              name="address"
-              placeholder="Address (optional)"
-              value={formData.address}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg
-                         focus:ring-2 focus:ring-blue-400"
-            />
+            {/* Address */}
+            <div className="relative">
+              <span className="absolute left-4 top-4 text-slate-400">
+                <MapPin size={18} />
+              </span>
+              <textarea
+                name="address"
+                placeholder="Address (optional)"
+                value={formData.address}
+                onChange={handleInputChange}
+                rows={2}
+                className="w-full pl-12 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all duration-300 resize-none"
+              />
+            </div>
 
+            {/* Error Display */}
+            {errorMsg && (
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+                <AlertCircle className="text-red-400" size={16} />
+                <p className="text-sm text-red-400">{errorMsg}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               onClick={sendOtp}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500
-                         text-white font-semibold py-2 rounded-lg
-                         hover:scale-105 transition"
+              className="w-full py-3 rounded-xl font-semibold text-lg bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
-              {loading ? "Sending..." : "Send OTP"}
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                  Sending OTP...
+                </>
+              ) : (
+                <>
+                  <Send size={18} />
+                  Register
+                </>
+              )}
             </button>
 
-            <p className="text-sm text-center text-gray-600 mt-4">
-              Already registered?{" "}
-              <Link to="/login" className="text-blue-600 font-semibold">
-                Login
+            {/* Login Link */}
+            <p className="text-center text-slate-400 mt-4">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-amber-400 font-semibold hover:text-amber-300 hover:underline transition-colors"
+              >
+                Sign In
               </Link>
             </p>
           </div>
         ) : (
+          /* ---------------- OTP STEP ---------------- */
           <div className="space-y-6">
-            <div className="flex justify-center gap-2">
-              {otp.map((d, i) => (
+            {/* Email Display */}
+            <div className="flex items-center justify-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+              <Mail className="text-amber-400" size={18} />
+              <span className="text-amber-300 text-sm">
+                {formData.userEmail}
+              </span>
+            </div>
+
+            {/* OTP Inputs */}
+            <div className="flex justify-center gap-3">
+              {otp.map((digit, i) => (
                 <input
                   key={i}
                   id={`otp-${i}`}
-                  value={d}
+                  type="text"
+                  inputMode="numeric"
                   maxLength="1"
+                  value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
-                  className="w-12 h-12 text-center text-xl font-bold border
-                             border-gray-300 rounded-lg focus:ring-2
-                             focus:ring-blue-400"
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  className={`w-12 h-14 text-center text-2xl font-bold bg-slate-700/50 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all duration-300 ${
+                    digit ? "border-amber-500" : "border-slate-600"
+                  }`}
                 />
               ))}
             </div>
 
-            <div className="text-center text-sm">
+            {/* Timer / Resend */}
+            <div className="text-center">
               {timer > 0 ? (
-                <span className="text-gray-500">Resend in {timer}s</span>
+                <p className="text-slate-400 text-sm">
+                  Resend OTP in{" "}
+                  <span className="text-amber-400 font-semibold">{timer}s</span>
+                </p>
               ) : (
                 <button
                   onClick={resendOtp}
-                  className="text-blue-600 font-semibold"
+                  disabled={loading}
+                  className="text-amber-400 font-semibold hover:text-amber-300 transition-colors flex items-center gap-2 mx-auto"
                 >
+                  <RefreshCw size={16} />
                   Resend OTP
                 </button>
               )}
             </div>
 
+            {/* Error Display */}
+            {errorMsg && (
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+                <AlertCircle className="text-red-400" size={16} />
+                <p className="text-sm text-red-400">{errorMsg}</p>
+              </div>
+            )}
+
+            {/* Verify Button */}
             <button
               onClick={verifyOtp}
-              disabled={loading}
-              className="w-full bg-green-500 text-white font-semibold
-                         py-2 rounded-lg hover:scale-105 transition
-                         flex items-center justify-center gap-2"
+              disabled={loading || otp.join("").length !== 6}
+              className="w-full py-3 rounded-xl font-semibold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <Check size={18} /> Verify OTP
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <Check size={18} />
+                  Verify & Create Account
+                </>
+              )}
             </button>
 
+            {/* Back Button */}
             <button
-              onClick={() => setStep("register")}
-              className="w-full text-gray-500 text-sm hover:underline"
+              onClick={() => {
+                setStep("register");
+                setOtp(["", "", "", "", "", ""]);
+                setErrorMsg("");
+              }}
+              className="w-full text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center gap-2"
             >
+              <ArrowLeft size={16} />
               Back to Registration
             </button>
           </div>
-        )}
-
-        {errorMsg && (
-          <p className="text-sm text-red-600 mt-4 flex items-center gap-1">
-            <AlertCircle size={14} /> {errorMsg}
-          </p>
         )}
       </div>
     </div>
   );
 }
 
-/* ---------------- REUSABLE INPUT ---------------- */
-function Input({ icon, error, ...props }) {
+/* ---------------- REUSABLE INPUT COMPONENT ---------------- */
+function InputField({ icon, error, ...props }) {
   return (
     <div>
       <div className="relative">
-        <span className="absolute left-3 top-2.5 text-gray-400">{icon}</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          {icon}
+        </span>
         <input
           {...props}
-          className={`w-full pl-10 pr-4 py-2 border ${
-            error ? "border-red-500" : "border-gray-300"
-          } rounded-lg focus:ring-2 focus:ring-blue-400`}
+          className={`w-full pl-12 pr-4 py-3 bg-slate-700/50 border rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 transition-all duration-300 ${
+            error
+              ? "border-red-500 focus:border-red-500"
+              : "border-slate-600 focus:border-amber-400"
+          }`}
         />
       </div>
       {error && (
-        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+        <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1 ml-1">
           <AlertCircle size={12} /> {error}
         </p>
       )}
