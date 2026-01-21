@@ -9,6 +9,7 @@ import Register from "./components/Register";
 import SearchResults from "./components/Search";
 import Profile from "./components/Profile";
 import Toast from "./components/Toast";
+import MovieDetails from "./components/MovieDetails";
 
 function App() {
   const [watchlist, setWatchlist] = useState([]);
@@ -59,6 +60,7 @@ function App() {
                 poster_path="gDVgC9jd917NdAcqBdRRDUYi4Tq.jpg"
                 name="Avatar: Fire and Ash"
               />
+
               <Movies
                 watchlist={watchlist}
                 handleWatchList={handleWatchList}
@@ -79,8 +81,9 @@ function App() {
           }
         />
 
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/movie/:id" element={<MovieDetails />} />
 
+        <Route path="/profile" element={<Profile />} />
         <Route path="/toast" element={<Toast />} />
       </Routes>
     </div>

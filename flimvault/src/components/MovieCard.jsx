@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function MovieCard({
   movieObj,
@@ -9,35 +9,44 @@ function MovieCard({
   handleRemoveFromWatchlist,
   watchlist,
 }) {
+  const navigate = useNavigate();
+
   const isInWatchlist = watchlist?.some((movie) => movie.id === movieObj.id);
 
+  // ✅ Always go to movie details page (NO LOGIN FORCE HERE)
+  const handleMovieClick = () => {
+    navigate(`/movie/${movieObj.id}`);
+  };
+
   return (
-    <div className="group relative rounded-xl overflow-hidden bg-slate-800/50 border border-slate-700/50 shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 hover:scale-105 hover:border-amber-500/30">
+    <div
+      onClick={handleMovieClick}
+      className="group relative rounded-xl overflow-hidden bg-slate-800/50 border border-slate-700/50 shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 hover:scale-105 hover:border-amber-500/30 cursor-pointer"
+    >
       {/* Movie Poster */}
-      <Link to={`/movie/${movieObj.id}`}>
-        <div className="aspect-[2/3] overflow-hidden">
-          <img
-            src={
-              poster_path
-                ? `https://image.tmdb.org/t/p/w500${poster_path}`
-                : "https://via.placeholder.com/500x750?text=No+Image"
-            }
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        </div>
-      </Link>
+      <div className="aspect-[2/3] overflow-hidden">
+        <img
+          src={
+            poster_path
+              ? `https://image.tmdb.org/t/p/w500${poster_path}`
+              : "https://via.placeholder.com/500x750?text=No+Image"
+          }
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+      </div>
 
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
       {/* Watchlist Button */}
       <button
-        onClick={() =>
+        onClick={(e) => {
+          e.stopPropagation(); // ✅ stop navigation on watchlist click
           isInWatchlist
             ? handleRemoveFromWatchlist(movieObj)
-            : handleWatchList(movieObj)
-        }
+            : handleWatchList(movieObj);
+        }}
         className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
           isInWatchlist
             ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/50"
@@ -69,7 +78,7 @@ function MovieCard({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4 0 00-6.364 0z"
             />
           </svg>
         )}
