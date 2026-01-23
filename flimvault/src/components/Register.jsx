@@ -19,7 +19,9 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import Toast from "./Toast";
 
-const API = "http://localhost:8086/api/auth";
+// const API = "http://localhost:8086/api/auth";
+
+const API = "https://s-movies-nlo8.onrender.com/api/auth";
 
 export default function RegistrationForm() {
   const navigate = useNavigate();

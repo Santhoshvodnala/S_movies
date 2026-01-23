@@ -2,7 +2,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8086",
+  // baseURL: "http://localhost:8086",
+  baseURL: "https://s-movies-nlo8.onrender.com",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -24,7 +25,7 @@ API.interceptors.response.use(
       console.warn("Unauthorized — token removed");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default API;
