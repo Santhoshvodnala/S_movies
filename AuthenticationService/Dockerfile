@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy pom.xml first (faster caching)
@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn -q clean package -DskipTests
 
 # ---- Run Stage ----
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
 
 # Copy jar from build stage
