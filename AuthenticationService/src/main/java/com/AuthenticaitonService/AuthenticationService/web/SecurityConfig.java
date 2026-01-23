@@ -72,7 +72,7 @@ public class SecurityConfig {
                 CorsConfiguration cfg = new CorsConfiguration();
 
                 cfg.setAllowedOriginPatterns(List.of("http://localhost:*", "http://localhost:5173",
-                                "https://*.netlify.app"));
+                                "https://*.netlify.app", "https://*.vercel.app"));
                 cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE",
                                 "OPTIONS"));
                 cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept",
