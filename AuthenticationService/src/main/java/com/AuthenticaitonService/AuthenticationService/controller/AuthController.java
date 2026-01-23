@@ -114,3 +114,11 @@ public class AuthController {
     }
 
 }
+
+@RestController
+class Test {
+    @GetMapping()
+    public String test() {
+        return "Test";
+    }
+}
