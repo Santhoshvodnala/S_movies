@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import MovieCard from "./movieCard";
+import MovieCard from "./MovieCard";
 
 const API_KEY = "89c5847955a7ad9c03e4344656a4e6d4";
 
@@ -25,7 +25,7 @@ const SearchResults = ({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${searchQuery}`
+        `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${searchQuery}`,
       );
       const data = await response.json();
 
@@ -43,9 +43,7 @@ const SearchResults = ({
 
   return (
     <div className="p-5">
-      <h2 className="text-3xl font-bold mb-5">
-        Search Results for "{query}"
-      </h2>
+      <h2 className="text-3xl font-bold mb-5">Search Results for "{query}"</h2>
 
       {movies.length === 0 ? (
         <p>No movies found.</p>
