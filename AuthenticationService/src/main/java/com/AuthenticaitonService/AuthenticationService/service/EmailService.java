@@ -13,14 +13,21 @@ public class EmailService {
     private final JavaMailSender javaMailSender;
 
     public void SendmailOtp(String to, String otp) {
-        SimpleMailMessage ms = new SimpleMailMessage();
+        try {
+            SimpleMailMessage ms = new SimpleMailMessage();
 
-        ms.setTo(to);
-        ms.setSubject("Your S-movies Verification Code");
-        ms.setText("Your Verification code is :" + otp + " "
-                + "This Code will expire in few mintues.");
+            ms.setTo(to);
+            ms.setSubject("Your S-movies Verification Code");
+            ms.setText("Your Verification code is :" + otp + " "
+                    + "This Code will expire in few mintues.");
 
-        javaMailSender.send(ms);
+            javaMailSender.send(ms);
+            System.out.println("Mail sent successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+
     }
 
 }

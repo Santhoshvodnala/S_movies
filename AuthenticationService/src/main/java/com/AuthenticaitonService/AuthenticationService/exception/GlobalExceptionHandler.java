@@ -25,4 +25,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInavlidOPassword(InavlidCredentials ex) {
         return new ResponseEntity<>(Map.of("Message", "Invalid Credentials"), HttpStatus.valueOf(400));
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<?> handleRuntime(RuntimeException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
 }
