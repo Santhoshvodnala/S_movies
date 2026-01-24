@@ -59,9 +59,16 @@ public class OtpService {
 
         emailRepository.save(otp);
 
-        emailService.SendmailOtp(email, code);
+        emailRepository.save(otp);
 
-        return "OTP sent successfully";
+        try {
+            emailService.SendmailOtp(email, code);
+            return "OTP sent successfully";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "OTP generated but email sending failed. Please try again.";
+        }
+
     }
 
     public boolean verify(String email, String code) {
