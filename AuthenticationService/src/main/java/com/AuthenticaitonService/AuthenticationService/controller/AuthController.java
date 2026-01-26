@@ -127,6 +127,10 @@ public class AuthController {
 
         String idToken = body.get("idToken");
 
+        if (idToken == null || idToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("idToken is missing");
+        }
+
         FirebaseToken decode = firebaseAuthService.verifyFirebaseToken(idToken);
 
         String email = decode.getEmail();

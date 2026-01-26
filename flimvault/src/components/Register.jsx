@@ -21,9 +21,10 @@ import Toast from "./Toast";
 
 // ✅ Firebase Google Auth
 import { signInWithPopup } from "firebase/auth";
-import { firebaseAuth, googleProvider } from "./firebase";
+import { firebaseAuth, googleProvider } from "../api/firebase";
 import { useAuth } from "./AppContext";
 
+// ✅ Google image
 import google from "../assets/google.png";
 
 // const API = "http://localhost:8086/api/auth";
@@ -53,9 +54,7 @@ export default function RegistrationForm() {
   const [timer, setTimer] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const showToastMsg = (message, type) => {
-    setToast({ message, type });
-  };
+  const showToastMsg = (message, type) => setToast({ message, type });
 
   useEffect(() => {
     if (timer > 0) {
@@ -86,7 +85,6 @@ export default function RegistrationForm() {
     return Object.keys(e).length === 0;
   };
 
-  // ✅ OTP flow (same)
   const sendOtp = async () => {
     if (!validateForm()) return;
 
@@ -126,15 +124,13 @@ export default function RegistrationForm() {
     const copy = [...otp];
     copy[index] = value.slice(-1);
     setOtp(copy);
-    if (value && index < 5) {
+    if (value && index < 5)
       document.getElementById(`otp-${index + 1}`)?.focus();
-    }
   };
 
   const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0)
       document.getElementById(`otp-${index - 1}`)?.focus();
-    }
   };
 
   const verifyOtp = async () => {
@@ -177,17 +173,16 @@ export default function RegistrationForm() {
     }
   };
 
-  //  NEW: Google Register/Login Flow
+  // ✅ Google register/login -> backend -> JWT -> AppContext.login()
   const handleGoogleRegister = async () => {
     try {
       setLoading(true);
       setErrorMsg("");
 
-      //  Firebase popup
       const result = await signInWithPopup(firebaseAuth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      //  Send token to backend → get your JWT
+      // ✅ backend gives our JWT
       const res = await axios.post(`${API}/google`, { idToken });
 
       const token = res?.data?.accessToken || res?.data?.token;
@@ -197,13 +192,13 @@ export default function RegistrationForm() {
 
       showToastMsg("Google registration successful!", "success");
 
-      // ✅ if backend returns profileCompleted, respect it
       if (res?.data?.profileCompleted === false) {
-        setTimeout(() => navigate("/"), 1200);
+        setTimeout(() => navigate("/complete-profile"), 1200);
       } else {
         setTimeout(() => navigate("/"), 1200);
       }
     } catch (e) {
+      console.log("Google login error:", e.response?.data || e.message);
       const msg =
         e.response?.data?.message || e.message || "Google signup failed";
       setErrorMsg(msg);
@@ -215,7 +210,6 @@ export default function RegistrationForm() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
-      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}
@@ -225,7 +219,6 @@ export default function RegistrationForm() {
       )}
 
       <div className="bg-slate-800/50 backdrop-blur-sm shadow-2xl rounded-2xl p-8 w-full max-w-[460px] border border-slate-700/50">
-        {/* Header */}
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
             {step === "register" ? (
@@ -248,7 +241,6 @@ export default function RegistrationForm() {
 
         {step === "register" ? (
           <div className="space-y-4">
-            {/* Full Name */}
             <InputField
               icon={<User size={18} />}
               placeholder="Full Name"
@@ -257,8 +249,6 @@ export default function RegistrationForm() {
               onChange={handleInputChange}
               error={errors.fullName}
             />
-
-            {/* Username */}
             <InputField
               icon={<User size={18} />}
               placeholder="Username"
@@ -267,8 +257,6 @@ export default function RegistrationForm() {
               onChange={handleInputChange}
               error={errors.username}
             />
-
-            {/* Email */}
             <InputField
               icon={<Mail size={18} />}
               type="email"
@@ -279,7 +267,6 @@ export default function RegistrationForm() {
               error={errors.userEmail}
             />
 
-            {/* Password */}
             <div>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -315,7 +302,6 @@ export default function RegistrationForm() {
               )}
             </div>
 
-            {/* Country Code + Phone */}
             <div className="flex gap-3">
               <div className="w-28">
                 <div className="relative">
@@ -349,7 +335,6 @@ export default function RegistrationForm() {
               </div>
             </div>
 
-            {/* Address */}
             <div className="relative">
               <span className="absolute left-4 top-4 text-slate-400">
                 <MapPin size={18} />
@@ -364,7 +349,6 @@ export default function RegistrationForm() {
               />
             </div>
 
-            {/* Error Display */}
             {errorMsg && (
               <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
                 <AlertCircle className="text-red-400" size={16} />
@@ -372,7 +356,6 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            {/* OTP Register */}
             <button
               onClick={sendOtp}
               disabled={loading}
@@ -391,14 +374,12 @@ export default function RegistrationForm() {
               )}
             </button>
 
-            {/* Divider */}
             <div className="flex items-center my-4">
               <div className="flex-1 h-px bg-slate-700"></div>
               <span className="px-4 text-slate-500 text-sm">or</span>
               <div className="flex-1 h-px bg-slate-700"></div>
             </div>
 
-            {/* ✅ Google Register */}
             <button
               onClick={handleGoogleRegister}
               disabled={loading}
@@ -407,12 +388,11 @@ export default function RegistrationForm() {
               <img
                 src={google}
                 alt="Google"
-                className="w-8 h-8 bg-white rounded-full p-1"
+                className="w-6 h-6 bg-white rounded-full p-1"
               />
               Continue with Google
             </button>
 
-            {/* Login Link */}
             <p className="text-center text-slate-400 mt-4">
               Already have an account?{" "}
               <Link
@@ -424,9 +404,7 @@ export default function RegistrationForm() {
             </p>
           </div>
         ) : (
-          // ---------------- OTP STEP ----------------
           <div className="space-y-6">
-            {/* Email Display */}
             <div className="flex items-center justify-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
               <Mail className="text-amber-400" size={18} />
               <span className="text-amber-300 text-sm">
@@ -434,7 +412,6 @@ export default function RegistrationForm() {
               </span>
             </div>
 
-            {/* OTP Inputs */}
             <div className="flex justify-center gap-3">
               {otp.map((digit, i) => (
                 <input
@@ -453,7 +430,6 @@ export default function RegistrationForm() {
               ))}
             </div>
 
-            {/* Timer / Resend */}
             <div className="text-center">
               {timer > 0 ? (
                 <p className="text-slate-400 text-sm">
@@ -472,7 +448,6 @@ export default function RegistrationForm() {
               )}
             </div>
 
-            {/* Error Display */}
             {errorMsg && (
               <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
                 <AlertCircle className="text-red-400" size={16} />
@@ -480,7 +455,6 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            {/* Verify Button */}
             <button
               onClick={verifyOtp}
               disabled={loading || otp.join("").length !== 6}
@@ -499,7 +473,6 @@ export default function RegistrationForm() {
               )}
             </button>
 
-            {/* Back Button */}
             <button
               onClick={() => {
                 setStep("register");
@@ -518,7 +491,6 @@ export default function RegistrationForm() {
   );
 }
 
-/* ---------------- REUSABLE INPUT COMPONENT ---------------- */
 function InputField({ icon, error, ...props }) {
   return (
     <div>

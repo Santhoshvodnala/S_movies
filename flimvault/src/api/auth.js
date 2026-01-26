@@ -39,3 +39,6 @@ export const fetchMe = async () => {
   const res = await API.get("/api/auth/me");
   return res.data?.data ?? res.data;
 };
+
+export const googleLoginBackend = (idToken) =>
+  API.post("/api/auth/google", { idToken });
