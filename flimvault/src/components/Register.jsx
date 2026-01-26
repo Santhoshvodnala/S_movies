@@ -193,7 +193,7 @@ export default function RegistrationForm() {
       showToastMsg("Google registration successful!", "success");
 
       if (res?.data?.profileCompleted === false) {
-        setTimeout(() => navigate("/complete-profile"), 1200);
+        setTimeout(() => navigate("/profile"), 1200);
       } else {
         setTimeout(() => navigate("/"), 1200);
       }
