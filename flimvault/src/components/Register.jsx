@@ -19,12 +19,19 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import Toast from "./Toast";
 
-// const API = "http://localhost:8086/api/auth";
+// ✅ Firebase Google Auth
+import { signInWithPopup } from "firebase/auth";
+import { firebaseAuth, googleProvider } from "./firebase";
+import { useAuth } from "./AppContext";
 
+import google from "../assets/google.png";
+
+// const API = "http://localhost:8086/api/auth";
 const API = "https://s-movies-nlo8.onrender.com/api/auth";
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [step, setStep] = useState("register");
   const [loading, setLoading] = useState(false);
@@ -46,7 +53,7 @@ export default function RegistrationForm() {
   const [timer, setTimer] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const showToast = (message, type) => {
+  const showToastMsg = (message, type) => {
     setToast({ message, type });
   };
 
@@ -79,6 +86,7 @@ export default function RegistrationForm() {
     return Object.keys(e).length === 0;
   };
 
+  // ✅ OTP flow (same)
   const sendOtp = async () => {
     if (!validateForm()) return;
 
@@ -87,11 +95,11 @@ export default function RegistrationForm() {
       await axios.post(`${API}/send-otp`, { email: formData.userEmail });
       setStep("otp");
       setTimer(60);
-      showToast(`OTP sent to ${formData.userEmail}`, "info");
+      showToastMsg(`OTP sent to ${formData.userEmail}`, "info");
     } catch (e) {
       const msg = e.response?.data?.message || "Failed to send OTP";
       setErrorMsg(msg);
-      showToast(msg, "error");
+      showToastMsg(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -103,11 +111,11 @@ export default function RegistrationForm() {
       await axios.post(`${API}/send-otp`, { email: formData.userEmail });
       setTimer(60);
       setOtp(["", "", "", "", "", ""]);
-      showToast("OTP resent successfully!", "info");
+      showToastMsg("OTP resent successfully!", "info");
     } catch (e) {
       const msg = e.response?.data?.message || "Failed to resend OTP";
       setErrorMsg(msg);
-      showToast(msg, "error");
+      showToastMsg(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -132,7 +140,7 @@ export default function RegistrationForm() {
   const verifyOtp = async () => {
     if (otp.join("").length !== 6) {
       setErrorMsg("Please enter a valid 6-digit OTP");
-      showToast("Please enter a valid 6-digit OTP", "warning");
+      showToastMsg("Please enter a valid 6-digit OTP", "warning");
       return;
     }
 
@@ -154,13 +162,52 @@ export default function RegistrationForm() {
         phone: formData.phone,
       });
 
-      showToast("Registration successful! Redirecting to login...", "success");
+      showToastMsg(
+        "Registration successful! Redirecting to login...",
+        "success",
+      );
       setTimeout(() => navigate("/login"), 2000);
     } catch (e) {
       const msg = e.response?.data?.message || "Verification failed";
       setErrorMsg(msg);
-      showToast(msg, "error");
+      showToastMsg(msg, "error");
       setOtp(["", "", "", "", "", ""]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //  NEW: Google Register/Login Flow
+  const handleGoogleRegister = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      //  Firebase popup
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      //  Send token to backend → get your JWT
+      const res = await axios.post(`${API}/google`, { idToken });
+
+      const token = res?.data?.accessToken || res?.data?.token;
+      if (!token) throw new Error("Backend token missing");
+
+      await login(token);
+
+      showToastMsg("Google registration successful!", "success");
+
+      // ✅ if backend returns profileCompleted, respect it
+      if (res?.data?.profileCompleted === false) {
+        setTimeout(() => navigate("/"), 1200);
+      } else {
+        setTimeout(() => navigate("/"), 1200);
+      }
+    } catch (e) {
+      const msg =
+        e.response?.data?.message || e.message || "Google signup failed";
+      setErrorMsg(msg);
+      showToastMsg(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -232,14 +279,13 @@ export default function RegistrationForm() {
               error={errors.userEmail}
             />
 
+            {/* Password */}
             <div>
               <div className="relative">
-                {/* Lock Icon */}
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <Lock size={18} />
                 </span>
 
-                {/* Input */}
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -249,11 +295,10 @@ export default function RegistrationForm() {
                   className={`w-full pl-12 pr-12 py-3 bg-slate-700/50 border rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 transition-all duration-300 ${
                     errors.password
                       ? "border-red-500 focus:border-red-500"
-                      : "border-slate-600 focus:border-zh-amber-400"
+                      : "border-slate-600 focus:border-amber-400"
                   }`}
                 />
 
-                {/* Eye Toggle */}
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
@@ -327,7 +372,7 @@ export default function RegistrationForm() {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* OTP Register */}
             <button
               onClick={sendOtp}
               disabled={loading}
@@ -341,9 +386,30 @@ export default function RegistrationForm() {
               ) : (
                 <>
                   <Send size={18} />
-                  Register
+                  Register with OTP
                 </>
               )}
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center my-4">
+              <div className="flex-1 h-px bg-slate-700"></div>
+              <span className="px-4 text-slate-500 text-sm">or</span>
+              <div className="flex-1 h-px bg-slate-700"></div>
+            </div>
+
+            {/* ✅ Google Register */}
+            <button
+              onClick={handleGoogleRegister}
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-semibold text-lg bg-slate-700/60 text-white border border-slate-600 hover:border-slate-500 hover:bg-slate-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            >
+              <img
+                src={google}
+                alt="Google"
+                className="w-8 h-8 bg-white rounded-full p-1"
+              />
+              Continue with Google
             </button>
 
             {/* Login Link */}
@@ -358,7 +424,7 @@ export default function RegistrationForm() {
             </p>
           </div>
         ) : (
-          /* ---------------- OTP STEP ---------------- */
+          // ---------------- OTP STEP ----------------
           <div className="space-y-6">
             {/* Email Display */}
             <div className="flex items-center justify-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">

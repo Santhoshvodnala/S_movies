@@ -121,4 +121,42 @@ public class UserService implements UserInterface {
 
     }
 
+    public User findByuserEmail(String email) {
+        return userRepository.findByUserEmail(email);
+    }
+
+    public User CreateGoogleUser(String email, String firebaseUid, String name) {
+        User user = new User();
+
+        user.setUserEmail(email);
+        user.setFirebaseUid(firebaseUid);
+
+        user.setUsername(name);
+
+        user.setRegisterType("Google");
+
+        user.setUsername("");
+        user.setPassword(null);
+        user.setCountryCode("+91");
+        user.setPhone("");
+        user.setAddress("");
+
+        return userRepository.save(user);
+
+    }
+
+    public User linkFireBaseUidMissing(User user, String firebaseUid) {
+
+        if (user.getFirebaseUid() == null || user.getFirebaseUid().isEmpty()) {
+
+            user.setFirebaseUid(firebaseUid);
+            user.setRegisterType("Google_Linked");
+
+            return userRepository.save(user);
+
+        }
+
+        return user;
+    }
+
 }

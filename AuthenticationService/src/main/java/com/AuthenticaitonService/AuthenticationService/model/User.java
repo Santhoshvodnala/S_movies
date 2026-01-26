@@ -40,4 +40,8 @@ public class User {
     @Column(name = "address", nullable = true, length = 200)
     private String address;
 
+    @Column(unique = true)
+    private String firebaseUid;
+    private String registerType;
+
 }

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.AuthenticaitonService.AuthenticationService.dtos.LoginRequest;
 import com.AuthenticaitonService.AuthenticationService.dtos.TokenResponse;
 import com.AuthenticaitonService.AuthenticationService.dtos.UserRequest;
-import com.AuthenticaitonService.AuthenticationService.dtos.UserResposne;
+
 import com.AuthenticaitonService.AuthenticationService.exception.InavlidCredentials;
+import com.AuthenticaitonService.AuthenticationService.model.User;
+import com.AuthenticaitonService.AuthenticationService.service.FirebaseAuthService;
 import com.AuthenticaitonService.AuthenticationService.service.OtpService;
 import com.AuthenticaitonService.AuthenticationService.service.UserService;
+import com.AuthenticaitonService.AuthenticationService.web.JwtService;
+import com.google.firebase.auth.FirebaseToken;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,12 @@ public class AuthController {
 
     @Autowired
     private OtpService otpService;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private FirebaseAuthService firebaseAuthService;
 
     @PostMapping("/send-otp")
     public ResponseEntity<String> sendOtpRequest(@RequestBody Map<String, String> request) {
@@ -110,6 +120,32 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("Message", "Server Error"));
         }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) throws Exception {
+
+        String idToken = body.get("idToken");
+
+        FirebaseToken decode = firebaseAuthService.verifyFirebaseToken(idToken);
+
+        String email = decode.getEmail();
+        String firebaseUid = decode.getUid();
+        String name = (String) decode.getClaims().get("name");
+
+        User user = userService.findByuserEmail(email);
+
+        if (user == null) {
+            user = userService.CreateGoogleUser(email, firebaseUid, name);
+        } else {
+            user = userService.linkFireBaseUidMissing(user, firebaseUid);
+        }
+
+        String jwt = jwtService.generateToken(user);
+
+        boolean profileCompleted = user.getUsername() != null && !user.getUsername().isEmpty();
+
+        return ResponseEntity.ok(Map.of("accessToken", jwt, "profileCompleted", profileCompleted, "User", user));
 
     }
 

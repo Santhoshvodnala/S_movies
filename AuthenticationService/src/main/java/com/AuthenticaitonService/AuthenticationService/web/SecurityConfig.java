@@ -50,10 +50,9 @@ public class SecurityConfig {
                                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
                                                                 "/swagger-ui.html")
                                                 .permitAll()
-                                                // explicitly allow OPTIONS preflight
+
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                // everything else must be authenticated (this includes /api/auth/me and
-                                                // updateProfile)
+                                
                                                 .anyRequest().authenticated());
 
                 http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
